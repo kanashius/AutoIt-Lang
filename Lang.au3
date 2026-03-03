@@ -9,13 +9,14 @@
 ; Language ......: English
 ; Description ...: UDF to help managing multiple languages.
 ; Author(s) .....: Kanashius
-; Version .......: 1.0.0
+; Version .......: 1.0.1
 ; ===============================================================================================================================
 
 ; #CURRENT# =====================================================================================================================
 ; __Lang_CallbackLabel
 ; __Lang_CallbackGuiCtrlSetData
 ; __Lang_GetLanguages
+; __Lang_GetCurrentLanguage
 ; __Lang_Load
 ; __Lang_Get
 ; __Lang_CreateCallback
@@ -126,6 +127,25 @@ Func __Lang_GetLanguages($sLangIni = "lang.ini")
 EndFunc
 
 ; #FUNCTION# ====================================================================================================================
+; Name ..........: __Lang_GetCurrentLanguage
+; Description ...: Get the currently selected language section name (language code)
+; Syntax ........: __Lang_GetCurrentLanguage()
+; Parameters ....:
+; Return values .: The section name on success, False otherwise
+; Author ........: Kanashius
+; Modified ......:
+; Remarks .......: Errors:
+;                  2 - No language selected, call __Lang_Load first
+; Related .......:
+; Link ..........:
+; Example .......: No
+; ===============================================================================================================================
+Func __Lang_GetCurrentLanguage()
+	If Not MapExists($__Lang__mLang, "sLang") Then Return SetError(2, 0, False)
+	Return $__Lang__mLang.sLang
+EndFunc
+
+; #FUNCTION# ====================================================================================================================
 ; Name ..........: __Lang_Load
 ; Description ...: Set the current language for the application.
 ; Syntax ........: __Lang_Load([$sLang=Default, [$sLangIni = "lang.ini"]])
@@ -153,29 +173,34 @@ EndFunc
 ;                           All keys will be loaded and added to the existing keys from the original file.
 ;                  - The values need to follow the rules for StringFormat. When retrieving a value with a key, the value will be put into StringFormat with the additional parameters (See __Lang_Get).
 ;
+;                  @extended - 1: The language was not found and the default (first) language was used instead
+;
 ;                  Errors:
-;                  1 - Parameter not valid (@extended: 1 - $sLang ($sLang not found in config, or no section found at all),
-;                                                      2 - $sLangIni (File could not be properly read))
+;                  1 - Parameter not valid (@extended: 1 - $sLang (no language found in config),
+;                                                      2 - $sLangIni (File could not be read/parsed))
 ; Related .......:
 ; Link ..........:
 ; Example .......: No
 ; ===============================================================================================================================
 Func __Lang_Load($sLang=Default, $sLangIni = "lang.ini")
-	If Not MapExists($__Lang__mLang, "sLangDefault") Then $__Lang__mLang.sLangDefault = Default
-	__Lang__LoadIni($sLangIni, $sLang)
-	If @error Then Return SetError(1, 2, False)
-	If $sLang = Default Then $sLang = $__Lang__mLang.sLangDefault
-	If $sLang = Default Then Return SetError(1, 1, False) ; no language found in config
-	If Not MapExists($__Lang__mLang, "mIni") Or Not MapExists($__Lang__mLang.mIni, $sLang) Then Return SetError(1, 1, False)
 	If Not MapExists($__Lang__mLang, "mCallbacks") Then
 		Local $mCallbacks[]
 		$__Lang__mLang.mCallbacks = $mCallbacks
 	EndIf
+	If Not MapExists($__Lang__mLang, "sLangDefault") Then $__Lang__mLang.sLangDefault = Default
+	__Lang__LoadIni($sLangIni, $sLang)
+	If @error Then Return SetError(1, 2, False)
+	Local $bFallbackToDefault = False
+	If $sLang = Default Or Not MapExists($__Lang__mLang.mIni, $sLang) Then
+		If $sLang<>Default Then $bFallbackToDefault = True
+		$sLang = $__Lang__mLang.sLangDefault
+	EndIf
+	If $sLang = Default Then Return SetError(1, 1, False) ; no language found in config
 	$__Lang__mLang.sLang = $sLang
 	For $iKey In MapKeys($__Lang__mLang.mCallbacks)
 		__Lang__HandleCallback($iKey+1)
 	Next
-	Return True
+	Return SetExtended($bFallbackToDefault?1:0, True)
 EndFunc
 
 ; #FUNCTION# ====================================================================================================================
@@ -465,7 +490,10 @@ Func __Lang__LoadIni($sFile, $sLang = Default, $bRec = False)
 		ElseIf $bAdd And UBound($arData)=3 Then ; is a line with key/value pair
 			$mEntries[$arData[1]] = $arData[2]
 			If $arData[1]="File" And Not $bRec And Not MapExists($mFileEntries, $arData[2]) Then
-				Local $mSubIni = __Lang__LoadIni($arData[2], $sLang, True)
+				Local $sFolder = ""
+				Local $arFolder = StringRegExp($sFile, "^(.*[\/\\]).*$", 1)
+				If UBound($arFolder)>0 Then $sFolder = $arFolder[0]
+				Local $mSubIni = __Lang__LoadIni($sFolder&$arData[2], $sLang, True)
 				If Not @error Then $mFileEntries[$arData[2]] = $mSubIni
 			EndIf
 		EndIf
