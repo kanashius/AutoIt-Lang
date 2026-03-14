@@ -4,3 +4,5 @@ v1.0.1
 - fixed location of sub config files to be relative to the main file instead of the application
 - added __Lang_Load falls back to the default language, if the language requested could not be found (@extended is set to 1 in that case)
 - added method __Lang_GetCurrentLanguage()
+v1.0.2
+- fixed crashes, when a $iCallback<1 was provided (MapExist crashes with negative values)

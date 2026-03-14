@@ -9,7 +9,7 @@
 ; Language ......: English
 ; Description ...: UDF to help managing multiple languages.
 ; Author(s) .....: Kanashius
-; Version .......: 1.0.1
+; Version .......: 1.0.2
 ; ===============================================================================================================================
 
 ; #CURRENT# =====================================================================================================================
@@ -322,7 +322,7 @@ Func __Lang_SetCallback($iCallback, $sKey = Default, _
 						$vParam21 = Default, $vParam22 = Default, $vParam23 = Default, $vParam24 = Default, $vParam25 = Default, _
 						$vParam26 = Default, $vParam27 = Default, $vParam28 = Default, $vParam29 = Default, $vParam30 = Default, _
 						$vParam31 = Default, $vParam32 = Default)
-	If Not MapExists($__Lang__mLang.mCallbacks, $iCallback-1) Then Return SetError(1, 1, False)
+	If $iCallback<1 Or Not MapExists($__Lang__mLang.mCallbacks, $iCallback-1) Then Return SetError(1, 1, False)
 	Local $arParams[@NumParams-2]
 	For $i=0 To UBound($arParams)-1
 		$arParams[$i] = Eval("vParam"&($i+1))
@@ -374,7 +374,7 @@ EndFunc
 ; Example .......: No
 ; ===============================================================================================================================
 Func __Lang__HandleCallback($iCallback)
-	If Not MapExists($__Lang__mLang.mCallbacks, $iCallback-1) Then Return SetError(1, 1, False)
+	If $iCallback<1 Or Not MapExists($__Lang__mLang.mCallbacks, $iCallback-1) Then Return SetError(1, 1, False)
 	Local $mCallback = $__Lang__mLang.mCallbacks[$iCallback-1]
 	If $mCallback.arParams = Default Then Return SetError(1, 3, False)
 	Local $sVal = Default, $iExt = 0
