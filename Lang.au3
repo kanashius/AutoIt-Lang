@@ -2,6 +2,7 @@
 #include <StaticConstants.au3>
 #include <WinAPISysWin.au3>
 #include <FileConstants.au3>
+#include <WinAPILocale.au3>
 
 ; #INDEX# =======================================================================================================================
 ; Title .........: Lang (AutoIt Language UDF)
@@ -9,7 +10,7 @@
 ; Language ......: English
 ; Description ...: UDF to help managing multiple languages.
 ; Author(s) .....: Kanashius
-; Version .......: 1.0.2
+; Version .......: 1.1.0
 ; ===============================================================================================================================
 
 ; #CURRENT# =====================================================================================================================
@@ -22,6 +23,7 @@
 ; __Lang_CreateCallback
 ; __Lang_SetCallback
 ; __Lang_DeleteCallback
+; __Lang_GetUserDefaultLanguage
 ; ===============================================================================================================================
 
 ; #INTERNAL_USE_ONLY# ===========================================================================================================
@@ -191,7 +193,9 @@ Func __Lang_Load($sLang=Default, $sLangIni = "lang.ini")
 	__Lang__LoadIni($sLangIni, $sLang)
 	If @error Then Return SetError(1, 2, False)
 	Local $bFallbackToDefault = False
-	If $sLang = Default Or Not MapExists($__Lang__mLang.mIni, $sLang) Then
+	If $sLang = Default And MapExists($__Lang__mLang.mIni, __Lang_GetUserDefaultLanguage()) Then
+		$sLang = __Lang_GetUserDefaultLanguage()
+	ElseIf $sLang = Default Or Not MapExists($__Lang__mLang.mIni, $sLang) Then
 		If $sLang<>Default Then $bFallbackToDefault = True
 		$sLang = $__Lang__mLang.sLangDefault
 	EndIf
@@ -356,6 +360,29 @@ Func __Lang_DeleteCallback($iCallback)
 		Return True
 	EndIf
 	Return False
+EndFunc
+
+; #FUNCTION# ====================================================================================================================
+; Name ..........: __Lang_GetUserDefaultLanguage
+; Description ...: Get the users default language as defined in ISO639.
+; Syntax ........: __Lang_GetUserDefaultLanguage()
+; Parameters ....:
+; Return values .: ISO639 language on sucess, Default on failure.
+; Author ........: Kanashius
+; Modified ......:
+; Remarks .......: Errors:
+;                  2 - Error calling _WinAPI_GetUserDefaultUILanguage
+;                  3 - Error calling _WinAPI_GetLocaleInfo
+; Related .......:
+; Link ..........:
+; Example .......: No
+; ===============================================================================================================================
+Func __Lang_GetUserDefaultLanguage()
+	Local $iLangId = _WinAPI_GetUserDefaultUILanguage()
+	If @error Then Return SetError(2, @error, Default)
+	Local $sIso = _WinAPI_GetLocaleInfo($iLangId, $LOCALE_SISO639LANGNAME)
+	If @error Then Return SetError(3, @error, Default)
+	Return $sIso
 EndFunc
 
 ; #INTERNAL_USE_ONLY# ===========================================================================================================

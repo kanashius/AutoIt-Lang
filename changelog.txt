@@ -6,3 +6,6 @@ v1.0.1
 - added method __Lang_GetCurrentLanguage()
 v1.0.2
 - fixed crashes, when a $iCallback<1 was provided (MapExist crashes with negative values)
+v1.1.0
+- added function to get the users preffered language(s)
+- __Lang_Load with $sLang=Default now tries to use the users default language, if available
